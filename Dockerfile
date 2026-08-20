@@ -1,6 +1,14 @@
 FROM mono:6.12.0.182
 
-RUN apt-get update \
+# Debian Buster está archivado.
+# Redirigimos APT a archive.debian.org para poder instalar XSP4.
+RUN printf '%s\n' \
+    'deb http://archive.debian.org/debian buster main contrib non-free' \
+    'deb http://archive.debian.org/debian-security buster/updates main contrib non-free' \
+    > /etc/apt/sources.list \
+    && printf 'Acquire::Check-Valid-Until "false";\n' \
+       > /etc/apt/apt.conf.d/99archive \
+    && apt-get update \
     && apt-get install -y --no-install-recommends \
         mono-xsp4 \
         ca-certificates \
