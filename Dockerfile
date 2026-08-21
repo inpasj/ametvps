@@ -18,12 +18,12 @@ WORKDIR /app
 
 COPY . /app
 
-RUN mkdir -p /app/bin-disabled \
-    && mv /app/bin/AspNet.ScriptManager.bootstrap.dll /app/bin-disabled/ 2>/dev/null || true; \
-    && mv /app/bin/AspNet.ScriptManager.jQuery.dll /app/bin-disabled/ 2>/dev/null || true; \
-    && mv /app/bin/Microsoft.ScriptManager.MSAjax.dll /app/bin-disabled/ 2>/dev/null || true; \
-    && mv /app/bin/Microsoft.ScriptManager.WebForms.dll /app/bin-disabled/ 2>/dev/null || true; \
-    && mv /app/bin/Microsoft.AspNet.FriendlyUrls.dll /app/bin-disabled/ 2>/dev/null || true
+RUN mkdir -p /app/bin-disabled && \
+    (mv /app/bin/AspNet.ScriptManager.bootstrap.dll /app/bin-disabled/ 2>/dev/null || true) && \
+    (mv /app/bin/AspNet.ScriptManager.jQuery.dll /app/bin-disabled/ 2>/dev/null || true) && \
+    (mv /app/bin/Microsoft.ScriptManager.MSAjax.dll /app/bin-disabled/ 2>/dev/null || true) && \
+    (mv /app/bin/Microsoft.ScriptManager.WebForms.dll /app/bin-disabled/ 2>/dev/null || true) && \
+    (mv /app/bin/Microsoft.AspNet.FriendlyUrls.dll /app/bin-disabled/ 2>/dev/null || true)
 
 EXPOSE 8080
 
