@@ -18,6 +18,12 @@ WORKDIR /app
 
 COPY . /app
 
+RUN mkdir -p /app/bin-disabled \
+    && mv /app/bin/AspNet.ScriptManager.bootstrap.dll /app/bin-disabled/ 2>/dev/null || true \
+    && mv /app/bin/AspNet.ScriptManager.jQuery.dll /app/bin-disabled/ 2>/dev/null || true \
+    && mv /app/bin/Microsoft.ScriptManager.MSAjax.dll /app/bin-disabled/ 2>/dev/null || true \
+    && mv /app/bin/Microsoft.ScriptManager.WebForms.dll /app/bin-disabled/ 2>/dev/null || true
+
 EXPOSE 8080
 
 CMD ["xsp4", "--address", "0.0.0.0", "--port", "8080", "--root", "/app", "--nonstop"]
