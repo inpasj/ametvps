@@ -1,0 +1,54 @@
+services:
+  amet-mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: amet-mssql
+    hostname: amet-mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: ${MSSQL_PID:-Express}
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Configure MSSQL_SA_PASSWORD as a secret}
+      SQLCMDPASSWORD: ${MSSQL_SA_PASSWORD:?Configure MSSQL_SA_PASSWORD as a secret}
+    expose:
+      - "1433"
+    volumes:
+      - amet-mssql-data:/var/opt/mssql
+      - type: bind
+        source: ${DB_BACKUP_PATH:?Configure DB_BACKUP_PATH with an absolute host path}
+        target: /var/opt/mssql/backup/AMET.bak
+        read_only: true
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          SQLCMD=/opt/mssql-tools18/bin/sqlcmd;
+          [ -x "$$SQLCMD" ] || SQLCMD=/opt/mssql-tools/bin/sqlcmd;
+          "$$SQLCMD" -S localhost -U sa -C -b -Q "SELECT 1" >/dev/null
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 40s
+    restart: unless-stopped
+
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    depends_on:
+      amet-mssql:
+        condition: service_healthy
+    environment:
+      SQLCMDPASSWORD: ${MSSQL_SA_PASSWORD:?Configure MSSQL_SA_PASSWORD as a secret}
+    entrypoint:
+      - /bin/bash
+      - -c
+    command:
+      - >-
+        SQLCMD=/opt/mssql-tools18/bin/sqlcmd;
+        [ -x "$$SQLCMD" ] || SQLCMD=/opt/mssql-tools/bin/sqlcmd;
+        exec "$$SQLCMD" -S amet-mssql -U sa -C -b -i /restore/restore.sql
+    volumes:
+      - ./docker/restore.sql:/restore/restore.sql:ro
+    restart: "no"
+
+volumes:
+  amet-mssql-data:
