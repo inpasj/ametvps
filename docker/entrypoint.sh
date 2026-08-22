@@ -21,6 +21,9 @@ db_name=$(xml_escape "$DB_NAME")
 db_user=$(xml_escape "$DB_USER")
 db_password=$(xml_escape "$DB_PASSWORD")
 
+db_config_tmp=$(mktemp /app/db.config.XXXXXX)
+trap 'rm -f "$db_config_tmp"' EXIT
+
 umask 077
 printf '%s\n' \
     '<?xml version="1.0" encoding="utf-8" ?>' \
@@ -29,6 +32,14 @@ printf '%s\n' \
     "  <add name=\"Excel03ConString\" connectionString=\"Provider=Microsoft.Jet.OLEDB.4.0;Data Source={0};Extended Properties='Excel 8.0;HDR=YES'\"/>" \
     "  <add name=\"Excel07+ConString\" connectionString=\"Provider=Microsoft.ACE.OLEDB.12.0;Data Source={0};Extended Properties='Excel 8.0;HDR=YES'\"/>" \
     '</connectionStrings>' \
-    > /app/db.config
+    > "$db_config_tmp"
+
+chown root:www-data "$db_config_tmp"
+chmod 0640 "$db_config_tmp"
+mv -f "$db_config_tmp" /app/db.config
+trap - EXIT
+
+# Keep Mono's Unix settings map from replacing the configured SQL providers with SQLite.
+export MONO_ASPNET_INHIBIT_SETTINGSMAP=1
 
 exec apache2ctl -D FOREGROUND
