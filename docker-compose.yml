@@ -1,0 +1,57 @@
+services:
+  db:
+    image: ${MSSQL_IMAGE:-mcr.microsoft.com/mssql/server:2022-latest}
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in the environment}
+    volumes:
+      - sql-data:/var/opt/mssql
+      - type: bind
+        source: ${DB_BACKUP_PATH:-../BD_AMET/20260819_BK_A.bak}
+        target: /var/opt/mssql/backup/AMET.bak
+        read_only: true
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3 bash -c '</dev/tcp/127.0.0.1/1433'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  db-init:
+    image: mcr.microsoft.com/mssql-tools:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SQLCMDPASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in the environment}
+    command:
+      - /opt/mssql-tools/bin/sqlcmd
+      - -S
+      - db
+      - -U
+      - sa
+      - -b
+      - -i
+      - /restore/restore.sql
+    volumes:
+      - ./docker/restore.sql:/restore/restore.sql:ro
+    restart: "no"
+
+  app:
+    build:
+      context: .
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      DB_SERVER: db,1433
+      DB_NAME: A
+      DB_USER: sa
+      DB_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in the environment}
+    ports:
+      - ${APP_PORT:-8080}:8080
+    restart: unless-stopped
+
+volumes:
+  sql-data:

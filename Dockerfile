@@ -1,7 +1,6 @@
 FROM mono:6.12.0.182
 
-# Debian Buster está archivado.
-# Redirigimos APT a archive.debian.org para poder instalar XSP4.
+# Debian Buster is archived, so package installation must use the archive mirror.
 RUN printf '%s\n' \
     'deb http://archive.debian.org/debian buster main contrib non-free' \
     'deb http://archive.debian.org/debian-security buster/updates main contrib non-free' \
@@ -10,20 +9,34 @@ RUN printf '%s\n' \
        > /etc/apt/apt.conf.d/99archive \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        mono-xsp4 \
+        apache2 \
         ca-certificates \
+        curl \
+        libapache2-mod-mono \
+        mono-apache-server4 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY . /app
+COPY docker/apache-site.conf /etc/apache2/sites-available/ametvps.conf
+COPY docker/entrypoint.sh /usr/local/bin/ametvps-entrypoint
 
-RUN mkdir -p /app/bin-disabled && \
-    (mv /app/bin/AspNet.ScriptManager.bootstrap.dll /app/bin-disabled/ 2>/dev/null || true) && \
-    (mv /app/bin/AspNet.ScriptManager.jQuery.dll /app/bin-disabled/ 2>/dev/null || true) && \
-    (mv /app/bin/Microsoft.ScriptManager.MSAjax.dll /app/bin-disabled/ 2>/dev/null || true) && \
-    (mv /app/bin/Microsoft.ScriptManager.WebForms.dll /app/bin-disabled/ 2>/dev/null || true)
+RUN mcs -out:/tmp/disable-friendly-redirect.exe \
+        -r:/usr/lib/mono/gac/Mono.Cecil/0.11.1.0__0738eb9f132ed756/Mono.Cecil.dll \
+        /app/docker/DisableFriendlyRedirect.cs && \
+    mono /tmp/disable-friendly-redirect.exe /app/bin/A.dll && \
+    rm /tmp/disable-friendly-redirect.exe && \
+    mkdir -p /var/www/.mono && \
+    chown -R www-data:www-data /var/www/.mono && \
+    a2dissite 000-default && \
+    a2enmod rewrite && \
+    a2ensite ametvps && \
+    chmod +x /usr/local/bin/ametvps-entrypoint
 
 EXPOSE 8080
 
-CMD ["xsp4", "--address", "0.0.0.0", "--port", "8080", "--root", "/app", "--nonstop"]
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=4 \
+    CMD curl --fail --location --silent http://127.0.0.1:8080/Account/Login.aspx >/dev/null || exit 1
+
+ENTRYPOINT ["/usr/local/bin/ametvps-entrypoint"]

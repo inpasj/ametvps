@@ -1,0 +1,12 @@
+.git
+.atl
+.codegraph
+.serena
+.env
+.env.*
+!.env.example
+db.config
+docker-compose*.yml
+docker-compose*.yaml
+compose*.yml
+compose*.yaml
