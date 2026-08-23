@@ -834,7 +834,6 @@
     </td>
     <td class="style1"></td>
 </tr>
-</tr>
     <tr style="height: 30px;" visible="true"><td align="right"><asp:Label ID="LabCodigoFinanciero" runat="server" Text="Cod. Financiero" visible="true"></asp:Label></td><td>&nbsp;</td>    
         <td class="style1">                      
        <asp:TextBox ID="TxtCodFinanciero" runat="server" Width="28%" Enabled="true" ReadOnly="false" visible="true"></asp:TextBox><asp:Label ID="LabelMensajeCodFinanciero" runat="server" Text="" ForeColor="Red" visible="true"></asp:Label>

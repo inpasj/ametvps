@@ -1,6 +1,5 @@
 ﻿<%@ Page Title="Afiliados" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Afiliados.aspx.cs" Inherits="A.Afiliados" %>
 
-<%@ Register Assembly="AjaxControlToolkit" Namespace="AjaxControlToolkit" TagPrefix="cc1" %>
 <asp:Content ID="HeaderContent" runat="server" ContentPlaceHolderID="HeadContent">
 <style type="text/css">
     table.dataTable td {
@@ -76,6 +75,35 @@
         }
     }
 </script>
+    <script type="text/javascript">
+        (function () {
+            function wire(textId, buttonId) {
+                var text = document.getElementById(textId), button = document.getElementById(buttonId), picker;
+                function iso(value) { value = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec((value || '').replace(/^\s+|\s+$/g, '')); return value ? value[3] + '-' + ('0' + value[2]).slice(-2) + '-' + ('0' + value[1]).slice(-2) : ''; }
+                function display(value) { value = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || ''); return value ? value[3] + '/' + value[2] + '/' + value[1] : ''; }
+                function unlock() { text.readOnly = false; text.removeAttribute('readonly'); }
+                function sync() { unlock(); picker.value = iso(text.value); }
+                if (!text || !button || text.getAttribute('data-native-calendar-bound') === '1') return;
+                text.setAttribute('data-native-calendar-bound', '1');
+                picker = document.createElement('input');
+                picker.type = 'date'; picker.id = textId + '_NativePicker'; picker.tabIndex = -1;
+                picker.setAttribute('aria-hidden', 'true');
+                picker.style.cssText = 'position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;';
+                document.body.appendChild(picker);
+                unlock(); sync();
+                ['focus', 'click', 'keydown'].forEach(function (name) { text.addEventListener(name, unlock); });
+                ['input', 'change', 'blur'].forEach(function (name) { text.addEventListener(name, sync); });
+                ['input', 'change'].forEach(function (name) { picker.addEventListener(name, function () { if (picker.value) { unlock(); text.value = display(picker.value); } }); });
+                button.addEventListener('click', function (event) { event.preventDefault(); sync(); try { if (picker.showPicker) { picker.showPicker(); return; } } catch (error) {} picker.focus(); picker.click(); });
+            }
+            function init() {
+                wire('<%= FechNac.ClientID %>', '<%= imgPopup.ClientID %>');
+                wire('<%= FechaIngresoB.ClientID %>', '<%= imgPopup2.ClientID %>');
+            }
+            if (window.Sys && Sys.Application) { Sys.Application.add_load(init); }
+            if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
+        })();
+    </script>
 </asp:Content>
 <asp:Content ID="BodyContent" runat="server" ContentPlaceHolderID="MainContent">
     <h2><span class="glyphicon glyphicon-share-alt" style="font-size: 27px; color:darkseagreen"></span> <span class="glyphicon glyphicon-user" style="font-size: 27px; color:darkgreen"></span>&nbsp;&nbsp;<asp:Label ID="Titulo" runat="server"></asp:Label></h2>
@@ -136,7 +164,6 @@
             <td>
                 
                 <asp:TextBox ID="FechNac" runat="server"></asp:TextBox><asp:ImageButton ID="imgPopup" ImageUrl="~/img/calendar.png" ImageAlign="Bottom" runat="server" />
-                <cc1:CalendarExtender ID="Calendar1" PopupButtonID="imgPopup" runat="server" TargetControlID="FechNac" Format="dd/MM/yyyy"></cc1:CalendarExtender>
             </td>
         </tr>
         <tr style="height: 30px;"><td align="right">Departamento: </td><td></td><td><asp:DropDownList ID="DDDepartamento" runat="server"></asp:DropDownList></td>
@@ -157,7 +184,6 @@
             <td align="right">Fecha de Ingreso:</td><td></td><td>
                 <asp:TextBox ID="FechaIngresoB" runat="server"></asp:TextBox>
                 <asp:ImageButton ID="imgPopup2" ImageUrl="~/img/calendar.png" ImageAlign="Bottom" runat="server" />
-                <cc1:CalendarExtender ID="CalendarExtender2" PopupButtonID="imgPopup2" runat="server" TargetControlID="FechaIngresoB" Format="dd/MM/yyyy"></cc1:CalendarExtender>
             </td>
             <td align="right">Estado: </td><td></td><td align="left">
                     <asp:DropDownList ID="DDEstadoB" runat="server">
